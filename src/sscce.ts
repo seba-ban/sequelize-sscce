@@ -22,19 +22,50 @@ export async function run() {
     }
   });
 
-  class Foo extends Model {};
-  Foo.init({
-    name: DataTypes.TEXT
-  }, {
-    sequelize,
-    modelName: 'Foo'
-  });
+  interface ExampleInterface {
+    message: string;
+    randomNumber: number;
+  }
+
+  class Example extends Model<
+    ExampleInterface & { id: number },
+    ExampleInterface
+  > {
+    public id!: number;
+    public message!: string;
+    public randomNumber!: number;
+
+    public readonly createdAt!: Date;
+    public readonly updatedAt!: Date;
+
+    toJSON(): ExampleInterface {
+      const { message, randomNumber } = this;
+      return { message, randomNumber };
+    }
+  }
+
+  Example.init(
+    {
+      id: {
+        type: DataTypes.INTEGER.UNSIGNED,
+        autoIncrement: true,
+        primaryKey: true,
+      },
+      message: {
+        type: new DataTypes.STRING(256),
+      },
+      randomNumber: {
+        type: DataTypes.FLOAT,
+      },
+    },
+    { sequelize }
+  );
 
   const spy = sinon.spy();
   sequelize.afterBulkSync(() => spy());
   await sequelize.sync();
   expect(spy).to.have.been.called;
 
-  log(await Foo.create({ name: 'TS foo' }));
-  expect(await Foo.count()).to.equal(1);
+  log(await Example.create({ message: "a", randomNumber: 10.2 }));
+  expect(await Example.count()).to.equal(1);
 }
